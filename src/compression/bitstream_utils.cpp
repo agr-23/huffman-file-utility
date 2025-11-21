@@ -1,88 +1,66 @@
 #include "bitstream_utils.h"
-#include <cassert>
 
-void BitWriter::put_bit(int bit) {
-    
-    bit = (bit != 0) ? 1 : 0;
+namespace compression {
 
+BitWriter::BitWriter(std::vector<uint8_t>& buf)
+    : buffer(buf), currentByte(0), bitPos(0) {}
+
+void BitWriter::writeBit(int bit) {
     if (bit) {
-        current_ |= static_cast<uint8_t>(1u << bitpos_);
+        currentByte |= static_cast<uint8_t>(1u << bitPos);
     }
-    bitpos_++;
-
-    if (bitpos_ == 8) {
-        bytes_.push_back(current_);
-        current_ = 0;
-        bitpos_ = 0;
-    }
-}
-
-void BitWriter::put_bits(uint32_t value, int nbits) {
-    assert(nbits >= 0 && nbits <= 32);
-
-    for (int i = 0; i < nbits; ++i) {
-        int b = (value >> i) & 1u;
-        put_bit(b);
+    bitPos++;
+    if (bitPos == 8) {
+        buffer.push_back(currentByte);
+        currentByte = 0;
+        bitPos = 0;
     }
 }
 
-void BitWriter::flush_zero() {
-    if (bitpos_ != 0) {
-        bytes_.push_back(current_);
-        current_ = 0;
-        bitpos_ = 0;
+void BitWriter::writeBits(uint32_t value, int bitCount) {
+    for (int i = 0; i < bitCount; ++i) {
+        int bit = (value >> i) & 1u; // LSB-first
+        writeBit(bit);
     }
 }
 
-void BitWriter::reset() {
-    bytes_.clear();
-    current_ = 0;
-    bitpos_ = 0;
+void BitWriter::flush() {
+    if (bitPos > 0) {
+        buffer.push_back(currentByte);
+        currentByte = 0;
+        bitPos = 0;
+    }
 }
 
-
-// ----------------- BitReader -----------------
-
-BitReader::BitReader(const std::vector<uint8_t>& bytes)
-    : bytes_(bytes), idx_(0), current_(0), bitpos_(8) {
+BitReader::BitReader(const std::vector<uint8_t>& buf, size_t offset)
+    : buffer(buf), index(offset), bitPos(0), atEnd(false) {
+    if (index >= buffer.size()) {
+        atEnd = true;
+    }
 }
 
-bool BitReader::get_bit(int& out_bit) {
-    if (bitpos_ == 8) {
-        if (idx_ >= bytes_.size()) {
-            return false;
+int BitReader::readBit() {
+    if (atEnd) return -1;
+    if (index >= buffer.size()) {
+        atEnd = true;
+        return -1;
+    }
+
+    uint8_t byte = buffer[index];
+    int bit = (byte >> bitPos) & 1u;
+    bitPos++;
+    if (bitPos == 8) {
+        bitPos = 0;
+        index++;
+        if (index >= buffer.size()) {
+            atEnd = true;
         }
-        current_ = bytes_[idx_++];
-        bitpos_ = 0;
     }
-
-    out_bit = (current_ >> bitpos_) & 1u;
-    bitpos_++;
-    return true;
+    return bit;
 }
 
-bool BitReader::get_bits(uint32_t& out_value, int nbits) {
-    assert(nbits >= 0 && nbits <= 32);
-    out_value = 0;
-    int bit;
-    for (int i = 0; i < nbits; ++i) {
-        if (!get_bit(bit)) {
-            return false;
-        }
-        if (bit) out_value |= (1u << i);
-    }
-    return true;
+bool BitReader::eof() const {
+    return atEnd;
 }
 
-bool BitReader::has_more() const {
-    // Quedan bits si:
-    // - el índice de byte aún no llegó al final
-    // - hay bits sin consumir en el 'current_' (bitpos_ < 8).
-    return (idx_ < bytes_.size()) || (bitpos_ < 8);
-}
-
-void BitReader::reset() {
-    idx_ = 0;
-    current_ = 0;
-    bitpos_ = 8;
-}
+} // namespace compression
