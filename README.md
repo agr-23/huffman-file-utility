@@ -1,8 +1,8 @@
 
-# Secure and Efficient File Management Utility (GSEA)
+# huffman-file-utility
 
 ## Overview
-GSEA is a C++ command-line application designed for lossless file compression and symmetric encryption using custom-built algorithms.  
+GSEA (the course name for this tool) is a C++ command-line application designed for lossless file compression and symmetric encryption using custom-built algorithms.  
 The project demonstrates systems programming principles by using POSIX system calls for all file I/O and leveraging multithreading for parallel processing of directories.
 
 GSEA supports:
@@ -11,7 +11,9 @@ GSEA supports:
 - Concurrent processing: one thread per file when a directory is provided as input.
 - Bit-level operations with custom BitReader/BitWriter utilities.
 
-This project is part of the Final Practical Exam for Operating Systems.
+Final practical exam for the Operating Systems course at EAFIT.
+
+The Vigenère cipher is a classroom exercise in byte-level transforms. It is not secure encryption and should not be used to protect real data.
 
 ---
 
@@ -41,30 +43,24 @@ No use of high-level I/O (`stdio.h`).
 
 ## Build Instructions
 
-Compile from the `src/` directory:
+Compile from the `src/` directory (all commands below run from there):
 
-```
-
+```sh
 make
-
 ```
 
 This generates the executable:
 
-```
-
+```sh
 ./huffenc
-
 ```
 
 ---
 
 ## Command-Line Usage
 
-```
-
+```sh
 ./huffenc [operations] -i <input> -o <output> [options]
-
 ```
 
 ### Operations
@@ -75,9 +71,7 @@ This generates the executable:
 
 Operations are applied in this order:
 ```
-
 Compress → Encrypt → Decrypt → Decompress
-
 ```
 
 ### Options
@@ -92,37 +86,34 @@ Compress → Encrypt → Decrypt → Decompress
 ## Examples
 
 ### Compress a text file
-```
-
-./huffenc -c --comp-alg huffman 
--i tests/single_text.md -o tests/out1
-
+```sh
+./huffenc -c --comp-alg huffman \
+  -i tests/single_text.md -o tests/out1
 ```
 
 ### Decompress it
-```
-
-./huffenc -d --comp-alg huffman 
--i tests/out1 -o tests/out1_dec
-
+```sh
+./huffenc -d --comp-alg huffman \
+  -i tests/out1 -o tests/out1_dec
 ```
 
 ### Compress + encrypt a directory concurrently
-```
 
-./huffenc -c -e -k secret 
---comp-alg huffman --enc-alg vigenere 
--i tests/dir_test -o tests/out_dir1
+When the input is a directory, the output directory must already exist.
 
+```sh
+mkdir -p tests/out_dir1
+./huffenc -c -e -k secret \
+  --comp-alg huffman --enc-alg vigenere \
+  -i tests/dir_test -o tests/out_dir1
 ```
 
 ### Decrypt + decompress
-```
-
-./huffenc -u -d -k secret 
---comp-alg huffman --enc-alg vigenere 
--i tests/out_dir1 -o tests/out_dir1_rec
-
+```sh
+mkdir -p tests/out_dir1_rec
+./huffenc -u -d -k secret \
+  --comp-alg huffman --enc-alg vigenere \
+  -i tests/out_dir1 -o tests/out_dir1_rec
 ```
 
 ---
@@ -131,10 +122,8 @@ Compress → Encrypt → Decrypt → Decompress
 
 A full validation script is included:
 
-```
-
+```sh
 tests/run_tests.sh
-
 ```
 
 It performs:
@@ -146,10 +135,8 @@ It performs:
 
 Run with:
 
-```
-
+```sh
 ./tests/run_tests.sh
-
 ```
 
 ---
@@ -157,7 +144,6 @@ Run with:
 ## Project Structure
 
 ```
-
 src/
 ├── main.cpp
 ├── compression/
@@ -171,10 +157,10 @@ src/
 │    ├── run_tests.sh
 │    └── (test files)
 ├── Makefile
-
 ```
 
 ---
 
 ## License
-Academic use for Operating Systems Final Exam.
+
+MIT, see [LICENSE](LICENSE).
